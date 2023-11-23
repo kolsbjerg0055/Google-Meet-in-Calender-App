@@ -6,3 +6,54 @@ My goal here is to have a script to run and add a new conference room to any cal
 Before continuing a Calendar ID is required. It can be found over at Google Calendar, clicking the three dots on the right of your calendar on the leftmost sidebar, and scrolling to the end, right over at the Integrate calendar section. Since it is my primary calendar, it happen to be my email address, but your mileage may vary.
 With the Calendar ID at hand, we can begin hacking on the script itself. Luckily, App Scripts supports all methods and objects from Google APIs, so it boils down to a simple lookup and patch:
 
+function addGoogleMeet() {
+  var calendarId = 'yourCalendarId';
+
+  var now = new Date();
+  var events = Calendar.Events.list(calendarId, {
+    timeMin: now.toISOString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+    maxResults: 10
+  });
+  if (events.items && events.items.length > 0) {
+    for (var i = 0; i < events.items.length; i++) {
+      var event = events.items[i];
+      if (!event.organizer.self) {
+        // Do not touch invites from others.
+        continue;
+      }
+      if (event.summary.toLowerCase().indexOf("call:") !== 0) {
+        // Do not touch events not marked as a call.
+        continue;
+      }
+
+      if (event.conferenceData && event.conferenceData.conferenceSolution 
+          && event.conferenceData.conferenceSolution.key 
+          && event.conferenceData.conferenceSolution.key.type) {
+            // Event already have a conference. :)
+            continue;
+      }
+
+      Logger.log("Updating event: %s (%s)", event.id, event.summary);
+
+      var updatedEvent = Calendar.Events.patch({
+        conferenceData: {
+          createRequest: {
+            conferenceSolutionKey: {
+              type: "hangoutsMeet",
+            },
+            requestId: Utilities.getUuid(),
+          },
+        },
+      }, calendarId, event.id, { conferenceDataVersion: 1 });
+      Logger.log("Updated event: %s", updatedEvent);
+    }
+  } else {
+    Logger.log('No events found.');
+  }
+}
+
+The script itself is quite simple. It just looks for the next 10 upcoming events created by the current authenticated user, checks whether they already have a Google Meet set up, and sets one up when needed.
+The last step is to set a trigger to run that script as soon as the calendar is updated, which is easy enough thanks to the Triggers section present in the Apps Script platform. In order to do that, find the “Triggers” section in the left sidebar, then choose “Add Trigger” on the bottom right.
+When creating the new trigger, choose “From calendar” as the event source, and “Calendar updated” on “Enter calendar details”; also fill your email on “Calendar owner email”, and save. To test, create a new event, prefixing its title (or summary) with “Call: “, save it, wait a few seconds, and refresh your Calendar.app to see your event updated with a Google Meet link. ✨
