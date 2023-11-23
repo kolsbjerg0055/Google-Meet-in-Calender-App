@@ -1,0 +1,8 @@
+I found this on: https://vito.io/articles/2021-04-06-google-meet-calendar-mac-app
+
+For a while now, I’ve struggled using Google Calendar and the stock Calendar.app on macOS, since it is not able to automatically add a Google Meet link to new events. The result? Meet is about to start, but there’s no conference link: havoc. Pure havoc.
+It wasn’t before a few minutes ago that I learned about Google Apps Script, a platform offered by Google to automate tasks. Not sure how I never heard about that before, but well, go figure. Apps Script ends up being a really easy way to schedule tasks to run periodically, or even based on other triggers, which I will explain right below.
+My goal here is to have a script to run and add a new conference room to any calendar event I create with the prefix “Call:”, since well, Calendar.app does not do that. To get started, access script.gooogle.com and create a new project. With the editor open, use the + button next to Services to add a new Calendar service integration. Documentation is well written and available here.
+Before continuing a Calendar ID is required. It can be found over at Google Calendar, clicking the three dots on the right of your calendar on the leftmost sidebar, and scrolling to the end, right over at the Integrate calendar section. Since it is my primary calendar, it happen to be my email address, but your mileage may vary.
+With the Calendar ID at hand, we can begin hacking on the script itself. Luckily, App Scripts supports all methods and objects from Google APIs, so it boils down to a simple lookup and patch:
+
